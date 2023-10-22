@@ -15,6 +15,7 @@
 	};
 
 	memory {
+		device_type = "memory";
 		reg = <0x80000000 0x20000000>;
     };
 
@@ -37,31 +38,6 @@
 			no-map;
 		};
 	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		identify {
-			gpios = <&gpio ASPEED_GPIO(A, 2) GPIO_ACTIVE_LOW>;
-		};
-
-		heartbeat {
-			gpios = <&gpio ASPEED_GPIO(E, 7) GPIO_ACTIVE_LOW>;
-		};
-	};
-
-	iio-hwmon {
-		compatible = "iio-hwmon";
-		io-channels = <&adc 0>, <&adc 1>, <&adc 2>, <&adc 3>,
-			<&adc 4>, <&adc 5>, <&adc 6>, <&adc 7>,
-			<&adc 8>, <&adc 9>, <&adc 10>, <&adc 11>,
-			<&adc 12>, <&adc 13>, <&adc 14>;
-	};
-
-	iio-hwmon-battery {
-		compatible = "iio-hwmon";
-		io-channels = <&adc 15>;
-	};
 };
 
 &fmc {
@@ -70,6 +46,7 @@
 		status = "okay";
 		m25p,fast-read;
 		label = "bmc";
+		spi-tx-bus-width = <0x02>;
 #include "openbmc-flash-layout-64.dtsi"
 	};
 
@@ -77,6 +54,7 @@
 		status = "okay";
 		m25p,fast-read;
 		label = "alt-bmc";
+		spi-tx-bus-width = <0x02>;
 #include "openbmc-flash-layout-64-alt.dtsi"
 	};
 };
@@ -84,13 +62,7 @@
 &uart1 {
 	/* Rear RS-232 connector */
 	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_txd1_default
-			&pinctrl_rxd1_default>;
-};
-
-&uart3 {
-	status = "okay";
+	clock-frequency = <0x16e3600>;
 };
 
 &uart5 {
@@ -98,107 +70,14 @@
 	 * on header; selectable via jumpers as alternative to uart2
 	 */
 	status = "okay";
+	clock-frequency = <0x16e3600>;
 };
 
-&uart_routing {
+&lpc_reset {
 	status = "okay";
-};
-
-&vuart {
-	status = "okay";
-
-	/* We enable the VUART here, but leave it in a state that does
-	 * not interfere with the SuperIO. The goal is to have both the
-	 * VUART and the SuperIO available and decide at runtime whether
-	 * the VUART should actually be used. For that reason, configure
-	 * an "invalid" IO address and an IRQ that is not used by the
-	 * BMC.
-	 */
-	aspeed,lpc-io-reg = <0xffff>;
-	aspeed,lpc-interrupts = <15 IRQ_TYPE_LEVEL_HIGH>;
-};
-
-&lpc_ctrl {
-	status = "okay";
-};
-
-&lpc_snoop {
-	status = "okay";
-	snoop-ports = <0x80>;
-};
-
-&adc {
-	status = "okay";
-};
-
-&vhub {
-	status = "okay";
-};
-
-&pwm_tacho {
-	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pwm0_default
-			&pinctrl_pwm1_default
-			&pinctrl_pwm3_default
-			&pinctrl_pwm4_default>;
-
-	/* CPU fan */
-	fan@0 {
-		reg = <0x00>;
-		aspeed,fan-tach-ch = /bits/ 8 <0x00>;
-	};
-
-	/* PWM group for chassis fans #1, #2, #3 and #4 */
-	fan@2 {
-		reg = <0x03>;
-		aspeed,fan-tach-ch = /bits/ 8 <0x02>;
-	};
-
-	fan@3 {
-		reg = <0x03>;
-		aspeed,fan-tach-ch = /bits/ 8 <0x03>;
-	};
-
-	fan@4 {
-		reg = <0x03>;
-		aspeed,fan-tach-ch = /bits/ 8 <0x04>;
-	};
-
-	fan@5 {
-		reg = <0x03>;
-		aspeed,fan-tach-ch = /bits/ 8 <0x05>;
-	};
-
-	/* PWM group for chassis fans #5 and #6  */
-	fan@6 {
-		reg = <0x04>;
-		aspeed,fan-tach-ch = /bits/ 8 <0x06>;
-	};
-
-	fan@7 {
-		reg = <0x04>;
-		aspeed,fan-tach-ch = /bits/ 8 <0x07>;
-	};
 };
 
 &i2c2 {
-	status = "okay";
-
-	/* BMC EEPROM, incl. mainboard FRU */
-	eeprom@50 {
-		compatible = "atmel,24c256";
-		reg = <0x50>;
-	};
-	/* Also connected to:
-	 * - BCM5720
-	 * - FPGA
-	 * - FAN HDR
-	 * - FPIO HDR
-	 */
-};
-
-&i2c3 {
 	status = "okay";
 
 	/* PSU1 FRU @ 0xA0 */
@@ -224,107 +103,45 @@
 		compatible = "pmbus";
 		reg = <0x7A>;
 	};
-
-};
-
-&i2c5 {
-	status = "okay";
-	/* Hardware monitor with temperature sensors */
-	nct7802@28 {
-		compatible = "nuvoton,nct7802";
-		reg = <0x28>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		channel@0 { /* LTD */
-			reg = <0>;
-			status = "okay";
-		};
-
-		channel@1 { /* RTD1 */
-			reg = <1>;
-			status = "okay";
-			sensor-type = "temperature";
-			temperature-mode = "thermistor";
-		};
-
-		channel@2 { /* RTD2 */
-			reg = <2>;
-			status = "okay";
-			sensor-type = "temperature";
-			temperature-mode = "thermistor";
-		};
-
-		channel@3 { /* RTD3 */
-			reg = <3>;
-			status = "okay";
-			sensor-type = "temperature";
-		};
-	};
-
-	/* Also connected to:
-	 * - PCA9544
-	 * - CLK BUFF
-	 * - OCP FRU
-	 */
-};
-
-&i2c6 {
-	status = "okay";
-	/* Connected to:
-	 * - PCA9548 @0xE0
-	 * - PCA9548 @0xE2
-	 * - PCA9544 @0xE4
-	 */
 };
 
 &i2c7 {
 	status = "okay";
-
-	/* Connected to:
-	 * - PCH SMBUS #4
-	 */
-};
-
-&i2c8 {
-	status = "okay";
-
-	/* Not connected */
 };
 
 &mac0 {
 	status = "okay";
 	pinctrl-names = "default";
 	phy-mode = "rgmii";
+	use-ncsi;
 	pinctrl-0 = <&pinctrl_rgmii1_default &pinctrl_mdio1_default>;
+	clocks = <&syscon ASPEED_CLK_GATE_MAC1CLK>,
+           <&syscon ASPEED_CLK_MAC1RCLK>;
+    clock-names = "MACCLK", "RCLK";
 };
 
 &mac1 {
 	status = "okay";
 	pinctrl-names = "default";
 	phy-mode = "rgmii";
+	use-ncsi;
 	pinctrl-0 = <&pinctrl_rgmii2_default &pinctrl_mdio2_default>;
-};
-
-&ibt {
-	status = "okay";
-};
-
-&kcs1 {
-	status = "okay";
-	aspeed,lpc-io-reg = <0xca8>;
-};
-
-&kcs3 {
-	status = "okay";
-	aspeed,lpc-io-reg = <0xca2>;
-	aspeed,lpc-interrupts = <1 IRQ_TYPE_LEVEL_HIGH>;
+	clocks = <&syscon ASPEED_CLK_GATE_MAC2CLK>,
+		 <&syscon ASPEED_CLK_MAC2RCLK>;
+	clock-names = "MACCLK", "RCLK";
 };
 
 /* Enable BMC VGA output to show an early (pre-BIOS) boot screen */
 &gfx {
 	status = "okay";
 	memory-region = <&gfx_memory>;
+};
+
+&edac {
+	status = "okay";
+	reg = <0x1e6e0000 0x174 0x1e6e0200 0x1d4>;
+	clock-frequency = <400000000>;
+	clocks = <&syscon ASPEED_CLK_GATE_MCLK>;
 };
 
 /* We're following the GPIO naming as defined at
@@ -348,6 +165,8 @@
  */
 &gpio {
 	status = "okay";
+	reg = <0x1e780000 0x1000>;
+	gpio-ranges = <&pinctrl 0 0 220>;
 	gpio-line-names =
 	/*A0*/		"",
 	/*A1*/		"",
