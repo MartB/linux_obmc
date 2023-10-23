@@ -49,14 +49,6 @@
 		spi-tx-bus-width = <0x02>;
 #include "openbmc-flash-layout-64.dtsi"
 	};
-
-	flash@1 {
-		status = "okay";
-		m25p,fast-read;
-		label = "alt-bmc";
-		spi-tx-bus-width = <0x02>;
-#include "openbmc-flash-layout-64-alt.dtsi"
-	};
 };
 
 &uart1 {
@@ -111,24 +103,15 @@
 
 &mac0 {
 	status = "okay";
-	pinctrl-names = "default";
-	phy-mode = "rgmii";
 	use-ncsi;
-	pinctrl-0 = <&pinctrl_rgmii1_default &pinctrl_mdio1_default>;
-	clocks = <&syscon ASPEED_CLK_GATE_MAC1CLK>,
-           <&syscon ASPEED_CLK_MAC1RCLK>;
-    clock-names = "MACCLK", "RCLK";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_rmii1_default>;
 };
 
 &mac1 {
 	status = "okay";
 	pinctrl-names = "default";
-	phy-mode = "rgmii";
-	use-ncsi;
 	pinctrl-0 = <&pinctrl_rgmii2_default &pinctrl_mdio2_default>;
-	clocks = <&syscon ASPEED_CLK_GATE_MAC2CLK>,
-		 <&syscon ASPEED_CLK_MAC2RCLK>;
-	clock-names = "MACCLK", "RCLK";
 };
 
 /* Enable BMC VGA output to show an early (pre-BIOS) boot screen */
