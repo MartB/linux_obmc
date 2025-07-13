@@ -30,13 +30,6 @@
 			compatible = "shared-dma-pool";
 			reusable;
 		};
-
-		video {
-			size = <0x4000000>;
-			alignment = <0x1000000>;
-			compatible = "shared-dma-pool";
-			no-map;
-		};
 	};
 };
 
@@ -46,16 +39,15 @@
 		status = "okay";
 		m25p,fast-read;
 		label = "bmc";
-		spi-tx-bus-width = <0x02>;
+		spi-max-frequency = <50000000>;
 #include "openbmc-flash-layout-64.dtsi"
 	};
 };
 
-&uart1 {
-	/* Rear RS-232 connector */
-	status = "okay";
-	clock-frequency = <0x16e3600>;
-};
+&uart3 {
+    // REAR serial port?
+    status = "okay";
+}
 
 &uart5 {
 	/* BMC "debug" (console) UART; connected to RS-232 connector
@@ -66,6 +58,10 @@
 };
 
 &lpc_reset {
+	status = "okay";
+};
+
+&ibt {
 	status = "okay";
 };
 
@@ -103,13 +99,14 @@
 
 &mac0 {
 	status = "okay";
-	use-ncsi;
+
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_rmii1_default>;
+	pinctrl-0 = <&pinctrl_rgmii1_default &pinctrl_mdio1_default>;
 };
 
 &mac1 {
 	status = "okay";
+
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_rgmii2_default &pinctrl_mdio2_default>;
 };
@@ -118,13 +115,6 @@
 &gfx {
 	status = "okay";
 	memory-region = <&gfx_memory>;
-};
-
-&edac {
-	status = "okay";
-	reg = <0x1e6e0000 0x174 0x1e6e0200 0x1d4>;
-	clock-frequency = <400000000>;
-	clocks = <&syscon ASPEED_CLK_GATE_MCLK>;
 };
 
 /* We're following the GPIO naming as defined at
@@ -153,7 +143,7 @@
 	gpio-line-names =
 	/*A0*/		"",
 	/*A1*/		"",
-	/*A2*/		"led-identify", /* in/out: BMC_CHASSIS_ID_LED_L */
+	/*A2*/		"", /* in/out: BMC_CHASSIS_ID_LED_L */
 	/*A3*/		"",
 	/*A4*/		"",
 	/*A5*/		"",
@@ -163,27 +153,27 @@
 	/*C0-C7*/	"","","","","","","","",
 	/*D0*/		"",
 	/*D1*/		"",
-	/*D2*/		"power-chassis-good", /* in: PWR_GOOD_LED -- Check if this is Z3?*/
-	/*D3*/		"platform-reset", /* in: RESET_LED_L */
+	/*D2*/		"", /* in: PWR_GOOD_LED -- Check if this is Z3?*/
+	/*D3*/		"", /* in: RESET_LED_L */
 	/*D4*/		"",
 	/*D5*/		"",
 	/*D6*/		"",
 	/*D7*/		"",
-	/*E0*/		"power-button", /* in: BMC_SYS_MON_PWR_BTN_L */
-	/*E1*/		"power-chassis-control", /* out: BMC_ASSERT_PWR_BTN */
-	/*E2*/		"reset-button", /* in: BMC_SYS_MOS_RST_BTN_L*/
-	/*E3*/		"reset-control", /* out: BMC_ASSERT_RST_BTN */
-	/*E4*/		"nmi-button", /* in: BMC_SYS_MON_NMI_BTN_L */
-	/*E5*/		"nmi-control", /* out: BMC_ASSERT_NMI_BTN */
-	/*E6*/		"TSI_RESERT",
-	/*E7*/		"led-heartbeat", /* out: BMC_GPIOE7 */
+	/*E0*/		"", /* in: BMC_SYS_MON_PWR_BTN_L */
+	/*E1*/		"", /* out: BMC_ASSERT_PWR_BTN */
+	/*E2*/		"", /* in: BMC_SYS_MOS_RST_BTN_L*/
+	/*E3*/		"", /* out: BMC_ASSERT_RST_BTN */
+	/*E4*/		"", /* in: BMC_SYS_MON_NMI_BTN_L */
+	/*E5*/		"", /* out: BMC_ASSERT_NMI_BTN */
+	/*E6*/		"",
+	/*E7*/		"", /* out: BMC_GPIOE7 */
 	/*F0*/		"",
-	/*F1*/		"clear-cmos-control", /* out: BMC_ASSERT_CLR_CMOS_L */
+	/*F1*/		"", /* out: BMC_ASSERT_CLR_CMOS_L */
 	/*F2*/		"",
 	/*F3*/		"",
-	/*F4*/		"led-fault", /* out: BMC_HWM_FAULT_LED_L */
-	/*F5*/		"BMC_SYS_FAULT_LED_L",
-	/*F6*/		"BMC_ASSERT_BIOS_WP_L",
+	/*F4*/		"", /* out: BMC_HWM_FAULT_LED_L */
+	/*F5*/		"",
+	/*F6*/		"",
 	/*F7*/		"",
 	/*G0-G7*/	"","","","","","","","",
 	/*H0-H7*/	"","","","","","","","",
@@ -201,7 +191,7 @@
 	/*Q3*/		"",
 	/*Q4*/		"",
 	/*Q5*/		"",
-	/*Q6*/		"id-button", /* in: BMC_CHASSIS_ID_BTN_L */
+	/*Q6*/		"", /* in: BMC_CHASSIS_ID_BTN_L */
 	/*Q7*/		"",
 	/*R0-R7*/	"","","","","","","","",
 	/*S0-S7*/	"","","","","","","","",
@@ -212,7 +202,7 @@
 	/*X0-X7*/	"","","","","","","","",
 	/*Y0-Y7*/	"","","","","","","","",
 	/*Z0-Z2*/	"","","",
-	/*Z3*/		"post-complete", /* BMC_SYS_MON_PWROK */
+	/*Z3*/		"", /* BMC_SYS_MON_PWROK */
 	/*Z4-Z7*/	"","","","",
 	/*AA0*/		"",
 	/*AA1*/		"",
@@ -221,7 +211,7 @@
 	/*AA4*/		"",
 	/*AA5*/		"",
 	/*AA6*/		"",
-	/*AA7*/		"BMC_ASSERT_BMC_READY",
-	/*AB0*/		"BMC_SPD_SEL",
+	/*AA7*/		"",
+	/*AB0*/		"",
 	/*AB1-AB7*/	"","","","","","","";
 };
