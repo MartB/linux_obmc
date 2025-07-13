@@ -291,13 +291,13 @@
 	/* PSU1 FRU @ 0xA0 */
 	eeprom@50 {
 		compatible = "atmel,24c02";
-		reg = <0x50>;
+		reg = <0x70>;
 	};
 
 	/* PSU2 FRU @ 0xA2 */
 	eeprom@51 {
 		compatible = "atmel,24c02";
-		reg = <0x51>;
+		reg = <0x72>;
 	};
 
 	/* PSU1 @ 0xB0 */
