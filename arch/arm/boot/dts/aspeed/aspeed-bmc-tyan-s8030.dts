@@ -3,215 +3,828 @@
 
 #include "aspeed-g5.dtsi"
 #include <dt-bindings/gpio/aspeed-gpio.h>
-#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
-	model = "Tyan S8030 BMC";
-	compatible = "tyan,s8030-bmc", "aspeed,ast2500";
+    model = "Tyan S8030 BMC";
+    compatible = "tyan,s8030-bmc", "aspeed,ast2500";
 
-	chosen {
-		stdout-path = &uart5;
-		bootargs = "console=ttyS4,115200 earlycon";
-	};
-
-	memory {
-		device_type = "memory";
-		reg = <0x80000000 0x20000000>;
+    chosen {
+        stdout-path = &uart5;
+        bootargs = "console=ttyS4,115200 earlycon";
     };
 
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
+    aliases {
+        i2c14 = &i2c6mux1ch0;
+        i2c18 = &i2c6mux2ch0;
+        i2c19 = &i2c6mux2ch1;
+        i2c21 = &i2c6mux2ch3;
 
-		gfx_memory: framebuffer {
-			size = <0x01000000>; /* 16M */
-			alignment = <0x01000000>;
-			compatible = "shared-dma-pool";
-			reusable;
-		};
-	};
+        i2c31 = &channel_6_1_0;
+        i2c32 = &channel_6_1_1;
+        i2c33 = &channel_6_1_2;
+        i2c34 = &channel_6_1_3;
+        i2c35 = &channel_6_2_0;
+        i2c36 = &channel_6_2_1;
+        i2c37 = &channel_6_2_2;
+        i2c38 = &channel_6_2_3;
+        i2c39 = &channel_6_3_0;
+        i2c40 = &channel_6_3_1;
+        i2c41 = &channel_6_3_2;
+        i2c42 = &channel_6_3_3;
+    };
+
+    memory@80000000 {
+        reg = <0x80000000 0x20000000>;
+    };
+
+    reserved-memory {
+        #address-cells = <1>;
+        #size-cells = <1>;
+        ranges;
+
+        flash_memory: region@98000000 {
+            no-map;
+            reg = <0x98000000 0x04000000>; /* 64M */
+        };
+
+        vga_memory: framebuffer@9f000000 {
+            no-map;
+            reg = <0x9f000000 0x04000000>; /* 64M */
+        };
+
+        gfx_memory: framebuffer {
+            size = <0x04000000>; /* 64M */
+            alignment = <0x01000000>;
+            compatible = "shared-dma-pool";
+            reusable;
+        };
+    };
+
+    leds {
+        compatible = "gpio-leds";
+
+        BMC_HB_LED {
+            gpios = <&gpio ASPEED_GPIO(D, 7) GPIO_ACTIVE_HIGH>;
+            linux,default-trigger = "heartbeat";
+        };
+
+        BMC_ID_LED {
+            gpios = <&gpio ASPEED_GPIO(A, 2) GPIO_ACTIVE_LOW>;
+            default-state = "off";
+        };
+
+        BMC_FAULT_LED {
+            gpios = <&gpio ASPEED_GPIO(H, 1) GPIO_ACTIVE_LOW>;
+            default-state = "off";
+        };
+
+        BMC_PWR_LED {
+            gpios = <&gpio ASPEED_GPIO(H, 0) GPIO_ACTIVE_LOW>;
+            default-state = "on";
+        };
+    };
+
+    i2c6mux1 { // U52, Pericom PI5C3253, U104, Pericom PI5C3253
+        compatible = "i2c-mux-gpio";
+        #address-cells = <1>;
+        #size-cells = <0>;
+        status = "okay";
+        i2c-parent = <&i2c6>;
+        idle-state = <0xc>; // 0b1100
+        mux-gpios = <&gpio ASPEED_GPIO(B, 1) GPIO_ACTIVE_HIGH>, // channel select
+                    <&gpio ASPEED_GPIO(B, 2) GPIO_ACTIVE_HIGH>, // channel select
+                    <&gpio ASPEED_GPIO(B, 0) GPIO_ACTIVE_HIGH>, // enable, set low to enable (U52)
+                    <&gpio ASPEED_GPIO(Q, 6) GPIO_ACTIVE_HIGH>; // enable, set low to enable (U104)
+
+        //when configuring U52, U104 as separate muxes sharing 2 gpios,
+        //driver fails to probe. Thus they now pretend to be 1 mux.
+
+        //U52  ch0, 0b1000 -> 0x8
+        //U52  ch1, 0b1001 -> 0x9
+        //U52  ch2, 0b1010 -> 0xa
+        //U52  ch3, 0b1011 -> 0xb
+
+        //U104 ch0, 0b0100 -> 0x4
+        //U104 ch1, 0b0101 -> 0x5
+        //U104 ch2, 0b0110 -> 0x6
+        //U104 ch3, 0b0111 -> 0x7
+
+        i2c6mux1ch0: i2c@4 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <4>;
+        };
+        i2c6mux1ch1: i2c@5 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <5>;
+        };
+        i2c6mux1ch2: i2c@6 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <6>;
+        };
+        i2c6mux1ch3: i2c@7 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <7>;
+        };
+
+        i2c6mux2ch0: i2c@0x8 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x8>;
+        };
+        i2c6mux2ch1: i2c@0x9 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x9>;
+        };
+        i2c6mux2ch2: i2c@0xa {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0xa>;
+        };
+        i2c6mux2ch3: i2c@0xb {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0xb>;
+        };
+    };
+
+    i2c6mux3 { // U55, Pericom PI5C3253
+        compatible = "i2c-mux-gpio";
+        #address-cells = <1>;
+        #size-cells = <0>;
+        status = "okay";
+        i2c-parent = <&i2c6>;
+        idle-state = <0x4>;
+        mux-gpios = <&gpio ASPEED_GPIO(Q, 4) GPIO_ACTIVE_HIGH>, // channel select
+                    <&gpio ASPEED_GPIO(Q, 5) GPIO_ACTIVE_HIGH>, // channel select
+                    <&gpio ASPEED_GPIO(A, 3) GPIO_ACTIVE_HIGH>;  // enable, set low to enable
+        i2c6mux3ch0: i2c@0 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0>;
+        };
+        i2c6mux3ch1: i2c@1 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <1>;
+        };
+        i2c6mux3ch2: i2c@2 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <2>;
+        };
+        i2c6mux3ch3: i2c@3 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <3>;
+        };
+    };
+
+    iio-hwmon {
+        compatible = "iio-hwmon";
+
+        io-channels =
+            <&adc 0>, /* BMC_ADC_5_DUAL */
+            <&adc 1>, /* BMC_ADC_33_DUAL */
+            <&adc 2>, /* BMC_ADC_12_RUN */
+            <&adc 3>, /* BMC_ADC_5_RUN */
+            <&adc 4>, /* BMC_ADC_33_RUN */
+            <&adc 5>, /* BMC_P0_ADC_18_RUN */
+            /* ADC 6     connected to GND */
+            <&adc 7>, /* BMC_ADC_P0_VDD_CORE_RUN */
+            <&adc 8>, /* BMC_ADC_P0_VDD_SOC_RUN */
+            <&adc 9>, /* BMC_ADC_P0_VDD_MEM_ABCD_RUN */
+            <&adc 10>, /* BMC_ADC_P0_VDD_MEM_EFGH_RUN */
+            /* ADC 11 ... 14 connected to GND */
+            <&adc 15>; /* BMC_ADC_VBAT_33 */
+    };
 };
 
 &fmc {
-	status = "okay";
-	flash@0 {
-		status = "okay";
-		m25p,fast-read;
-		label = "bmc";
-		spi-max-frequency = <50000000>;
+    /* BMC SPI */
+    status = "okay";
+
+    flash@0 {
+        label = "bmc";
+        status = "okay";
+        m25p,fast-read;
 #include "openbmc-flash-layout-64.dtsi"
-	};
+    };
+};
+
+&spi1 {
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_spi1_default>;
+
+    flash@0 {
+        label = "pnor";
+        status = "okay";
+        m25p,fast-read;
+    };
+};
+
+&uart1 {
+    /* Rear RS-232 connector */
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_txd1_default
+            &pinctrl_rxd1_default
+            &pinctrl_ncts1_default
+            &pinctrl_ndcd1_default
+            &pinctrl_ndsr1_default
+            &pinctrl_nri1_default
+            &pinctrl_ndtr1_default
+            &pinctrl_nrts1_default>;
+};
+
+&uart2 {
+    status = "okay";
 };
 
 &uart3 {
-    // REAR serial port?
     status = "okay";
-}
+};
+
+&uart4 {
+    status = "okay";
+};
 
 &uart5 {
-	/* BMC "debug" (console) UART; connected to RS-232 connector
-	 * on header; selectable via jumpers as alternative to uart2
-	 */
-	status = "okay";
-	clock-frequency = <0x16e3600>;
+    /* BMC "debug" (console) UART Header */
+    status = "okay";
 };
 
-&lpc_reset {
-	status = "okay";
-};
-
-&ibt {
-	status = "okay";
-};
-
-&i2c2 {
-	status = "okay";
-
-	/* PSU1 FRU @ 0xA0 */
-	eeprom@70 {
-		compatible = "atmel,24c02";
-		reg = <0x70>;
-	};
-
-	/* PSU2 FRU @ 0xA2 */
-	eeprom@72 {
-		compatible = "atmel,24c02";
-		reg = <0x72>;
-	};
-
-	/* PSU1 @ 0xB0 */
-	power-supply@78 {
-		compatible = "pmbus";
-		reg = <0x78>;
-	};
-
-	/* PSU2 @ 0xB2 */
-	power-supply@7a {
-		compatible = "pmbus";
-		reg = <0x7A>;
-	};
-};
-
-&i2c7 {
-	status = "okay";
+&uart_routing {
+    status = "okay";
 };
 
 &mac0 {
-	status = "okay";
+    status = "okay";
 
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_rgmii1_default &pinctrl_mdio1_default>;
+    reg = <0x1e680000 0x180>;
+    interrupts = <3>;
+    clocks = <&syscon ASPEED_CLK_GATE_MAC2CLK>;
+
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_rgmii2_default &pinctrl_mdio2_default>;
+
+    phy-mode = "rgmii";
 };
 
 &mac1 {
-	status = "okay";
+    status = "okay";
 
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_rgmii2_default &pinctrl_mdio2_default>;
+    reg = <0x1e660000 0x180>;
+    interrupts = <2>;
+    clocks = <&syscon ASPEED_CLK_GATE_MAC1CLK>,
+             <&syscon ASPEED_CLK_MAC1RCLK>;
+    clock-names = "MACCLK", "RCLK";
+
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_rmii1_default>;
+
+    use-ncsi;
 };
 
-/* Enable BMC VGA output to show an early (pre-BIOS) boot screen */
+&i2c0 {
+    status = "okay";
+
+    cpu_rmi: cpu@3c {
+        compatible = "amd,sbrmi";
+        reg = <0x3c>;
+    };
+
+    cpu_temp: cpu@4c {
+        compatible = "amd,sbtsi", "apml,sb-tsi";
+        reg = <0x4c>;
+    };
+};
+
+&i2c1 {
+    status = "okay";
+    multi-master =<1>;
+
+    ipmb@10 {
+        compatible = "ipmb-dev";
+        reg = <0x10>;
+        i2c-protocol;
+    };
+};
+
+&i2c2 {
+    status = "okay";
+    /* FRU 24C256 @50h */
+    eeprom@50 {
+        compatible = "atmel,24c256";
+        reg = <0x50>;
+        pagesize = <32>;
+    };
+};
+
+&i2c3 {
+    status = "okay";
+};
+
+&i2c4 {
+    status = "okay";
+};
+
+&i2c5 {
+    status = "okay";
+    /* NCT7802 Hardware Monitor */
+    nct7802@28 {
+        compatible = "nuvoton,nct7802";
+        reg = <0x28>;
+
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        channel@0 { /* LTD */
+            reg = <0>;
+            status = "okay";
+        };
+        channel@1 { /* RTD1, SYS_AIR_INLET */
+            reg = <1>;
+            status = "okay";
+            sensor-type = "temperature";
+            temperature-mode = "thermistor";
+        };
+        channel@2 { /* RTD2, MB_AIR_INLET */
+            reg = <2>;
+            status = "okay";
+            sensor-type = "temperature";
+            temperature-mode = "thermistor";
+        };
+        channel@3 { /* RTD3, MB_AIR_OUTLET */
+            reg = <3>;
+            status = "okay";
+            sensor-type = "temperature";
+            temperature-mode = "thermistor";
+        };
+    };
+
+    x550thermal: tmp411@4c{
+        compatible = "ti,tmp411";
+        reg = <0x4c>;
+    };
+
+    eeprom@57 {
+        compatible = "atmel, 24c02";
+        reg = <0x57>;
+        pagesize = <8>;
+    };
+};
+
+&i2c6 {
+    status = "okay";
+
+    i2c-mux6-1@0x70 { // only present on ocga variant
+        compatible = "nxp,pca9544";
+        reg = <0x70>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        i2c-mux-idle-disconnect;
+        channel_6_1_0: i2c@0x0 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x0>;
+        };
+        channel_6_1_1: i2c@0x1 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x1>;
+        };
+        channel_6_1_2: i2c@0x2 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x2>;
+        };
+        channel_6_1_3: i2c@0x3 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x3>;
+        };
+    };
+    i2c-mux6-2@0x71 { // only present on some variants
+        compatible = "nxp,pca9544";
+        reg = <0x71>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        i2c-mux-idle-disconnect;
+        channel_6_2_0: i2c@0x0 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x0>;
+        };
+        channel_6_2_1: i2c@0x1 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x1>;
+        };
+        channel_6_2_2: i2c@0x2 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x2>;
+        };
+        channel_6_2_3: i2c@0x3 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x3>;
+        };
+    };
+    i2c-mux6-3@0x72 { // only present on some variants
+        compatible = "nxp,pca9544";
+        reg = <0x72>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        i2c-mux-idle-disconnect;
+        channel_6_3_0: i2c@0x0 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x0>;
+        };
+        channel_6_3_1: i2c@0x1 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x1>;
+        };
+        channel_6_3_2: i2c@0x2 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x2>;
+        };
+        channel_6_3_3: i2c@0x3 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x3>;
+        };
+    };
+};
+
+&i2c7 {
+    status = "okay";
+    multi-master;
+};
+
 &gfx {
-	status = "okay";
-	memory-region = <&gfx_memory>;
+    status = "okay";
+    memory-region = <&gfx_memory>;
 };
 
-/* We're following the GPIO naming as defined at
- * https://github.com/openbmc/docs/blob/master/designs/device-tree-gpio-naming.md.
- *
- * Notes on led-identify and id-button:
- * - A physical button is connected to id-button which
- *   triggers the clock on a D flip-flop. The /Q output of the
- *   flip-flop drives its D input.
- * - The flip-flop's Q output drives led-identify which is
- *   connected to LEDs.
- * - With that, every button press toggles the LED between on and off.
- *
- * Notes on power-, reset- and nmi- button and control:
- * - The -button signals can be used to monitor physical buttons.
- * - The -control signals can be used to actuate the specific
- *   operation.
- * - In hardware, the -button signals are connected to the -control
- *   signals through drivers with the -control signals being
- *   protected through diodes.
- */
+&video {
+    status = "okay";
+    memory-region = <&vga_memory>;
+};
+
+&vhub {
+    status = "okay";
+};
+
+&pwm_tacho {
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_pwm0_default
+            &pinctrl_pwm1_default
+            &pinctrl_pwm2_default
+            &pinctrl_pwm3_default
+            &pinctrl_pwm4_default>;
+
+    cpufan@0 {
+        reg = <0x00>;
+        aspeed,fan-tach-ch = /bits/ 8 <0x00>;
+    };
+
+    fan@0 {
+        reg = <0x01>;
+        aspeed,fan-tach-ch = /bits/ 8 <0x01>;
+    };
+
+    fan@1 {
+        reg = <0x02>;
+        aspeed,fan-tach-ch = /bits/ 8 <0x02>;
+    };
+
+    fan@2 {
+        reg = <0x03>;
+        aspeed,fan-tach-ch = /bits/ 8 <0x03>;
+    };
+
+    fan@3 {
+        reg = <0x04>;
+        aspeed,fan-tach-ch = /bits/ 8 <0x04>;
+    };
+};
+
+&lpc_ctrl {
+    status = "okay";
+    memory-region = <&flash_memory>;
+};
+
+&adc {
+    status = "okay";
+};
+
+&kcs1 {
+    status = "okay";
+    aspeed,lpc-io-reg = <0xca0>;
+};
+
+&kcs2 {
+    status = "okay";
+    aspeed,lpc-io-reg = <0xca8>;
+};
+
+&kcs3 {
+    status = "okay";
+    aspeed,lpc-io-reg = <0xca2>;
+};
+
+&rtc {
+    status = "okay";
+};
+
 &gpio {
-	status = "okay";
-	reg = <0x1e780000 0x1000>;
-	gpio-ranges = <&pinctrl 0 0 220>;
-	gpio-line-names =
-	/*A0*/		"",
-	/*A1*/		"",
-	/*A2*/		"", /* in/out: BMC_CHASSIS_ID_LED_L */
-	/*A3*/		"",
-	/*A4*/		"",
-	/*A5*/		"",
-	/*A6*/		"",
-	/*A7*/		"",
-	/*B0-B7*/	"","","","","","","","",
-	/*C0-C7*/	"","","","","","","","",
-	/*D0*/		"",
-	/*D1*/		"",
-	/*D2*/		"", /* in: PWR_GOOD_LED -- Check if this is Z3?*/
-	/*D3*/		"", /* in: RESET_LED_L */
-	/*D4*/		"",
-	/*D5*/		"",
-	/*D6*/		"",
-	/*D7*/		"",
-	/*E0*/		"", /* in: BMC_SYS_MON_PWR_BTN_L */
-	/*E1*/		"", /* out: BMC_ASSERT_PWR_BTN */
-	/*E2*/		"", /* in: BMC_SYS_MOS_RST_BTN_L*/
-	/*E3*/		"", /* out: BMC_ASSERT_RST_BTN */
-	/*E4*/		"", /* in: BMC_SYS_MON_NMI_BTN_L */
-	/*E5*/		"", /* out: BMC_ASSERT_NMI_BTN */
-	/*E6*/		"",
-	/*E7*/		"", /* out: BMC_GPIOE7 */
-	/*F0*/		"",
-	/*F1*/		"", /* out: BMC_ASSERT_CLR_CMOS_L */
-	/*F2*/		"",
-	/*F3*/		"",
-	/*F4*/		"", /* out: BMC_HWM_FAULT_LED_L */
-	/*F5*/		"",
-	/*F6*/		"",
-	/*F7*/		"",
-	/*G0-G7*/	"","","","","","","","",
-	/*H0-H7*/	"","","","","","","","",
-	/*I0-I7*/	"","","","","","","","",
-	/*J0-J7*/	"","","","","","","","",
-	/*K0-K7*/	"","","","","","","","",
-	/*L0-L7*/	"","","","","","","","",
-	/*M0-M7*/	"","","","","","","","",
-	/*N0-N7*/	"","","","","","","","",
-	/*O0-O7*/	"","","","","","","","",
-	/*P0-P7*/	"","","","","","","","",
-	/*Q0*/		"",
-	/*Q1*/		"",
-	/*Q2*/		"",
-	/*Q3*/		"",
-	/*Q4*/		"",
-	/*Q5*/		"",
-	/*Q6*/		"", /* in: BMC_CHASSIS_ID_BTN_L */
-	/*Q7*/		"",
-	/*R0-R7*/	"","","","","","","","",
-	/*S0-S7*/	"","","","","","","","",
-	/*T0-T7*/	"","","","","","","","",
-	/*U0-U7*/	"","","","","","","","",
-	/*V0-V7*/	"","","","","","","","",
-	/*W0-W7*/	"","","","","","","","",
-	/*X0-X7*/	"","","","","","","","",
-	/*Y0-Y7*/	"","","","","","","","",
-	/*Z0-Z2*/	"","","",
-	/*Z3*/		"", /* BMC_SYS_MON_PWROK */
-	/*Z4-Z7*/	"","","","",
-	/*AA0*/		"",
-	/*AA1*/		"",
-	/*AA2*/		"",
-	/*AA3*/		"",
-	/*AA4*/		"",
-	/*AA5*/		"",
-	/*AA6*/		"",
-	/*AA7*/		"",
-	/*AB0*/		"",
-	/*AB1-AB7*/	"","","","","","","";
+    status = "okay";
+    gpio-line-names =
+    /*A0*/   "BMC_GPIOA0_MAC1LINK", // [IN] MAC1 PHY link status input
+    /*A1*/   "BMC_RGMII_INT_L",     // [IN]
+    /*A2*/   "BMC_IDLED_ON_L",      // [IN/OUT]
+    /*A3*/   "BMC_PE2_SMB_EN_N",    // [OUT]
+    /*A4, A5, A6, A7*/   "","","","",
+
+    /*B0*/   "BMC_PE0_SMB_EN_N",   // [OUT]
+    /*B1*/   "BMC_PE_SMB_SW_BIT0", // [OUT]
+    /*B2*/   "BMC_PE_SMB_SW_BIT1", // [OUT]
+    /*B3*/   "BMC_DIMM_SMB_SW_EN", // [OUT]
+    /*B4*/   "BMC_GPIOB4",         // [IN]
+    /*B5*/   "P0_LPC_PD_L",        // [IN]
+    /*B6*/   "P0_LPC_PME_L",       // [IN/OUT]
+    /*B7*/   "BMC_ALERT3_L",       // [IN]
+
+    //      SD CARD READING / WRITING
+    /*C0*/   "BMC_SD1CLK",         // [OUT]
+    /*C1*/   "BMC_SD1CMD",         // [IN/OUT]
+    /*C2*/   "BMC_SD1DAT0",        // [IN/OUT]
+    /*C3*/   "BMC_SD1DAT1",        // [IN/OUT]
+    /*C4*/   "BMC_SD1DAT2",        // [IN/OUT]
+    /*C5*/   "BMC_SD1DAT3",        // [IN/OUT]
+    /*C6*/   "BMC_SD1DET",         // [IN]
+    /*C7*/   "BMC_SD1WPT",
+
+    /*D0*/   "P0_SLP_S3_L",            // [IN]
+    /*D1*/   "P0_SLP_S5_L",            // [IN]
+    /*D2*/   "BMC_PS_ON",              // [IN]
+    /*D3*/   "BMC_SYS_MON_PWROK",      // [IN]
+    /*D4*/   "power-chassis-good",     // [IN]
+    /*D5*/   "",                       // [IN]
+    /*D6*/   "CHASSIS_INTRUSION",      // [IN] BMC_INTRUDER_HDE_L
+    /*D7*/   "BMC_SW_HEARTBEAT_LED_L", // [OUT]
+
+    /*E0*/   "power-button",          // [IN]
+    /*E1*/   "power-chassis-control", // [OUT]
+    /*E2*/   "reset-button",          // [IN]
+    /*E3*/   "reset-control",         // [OUT]
+    /*E4*/   "nmi-button",            // [IN]
+    /*E5*/   "nmi-control",           // [OUT]
+    /*E6*/   "P0_APML_SEL",           // [IN/OUT]
+    /*E7*/   "",
+
+    /*F0*/   "BMC_CPU_PIROM_SMB_WP",  // [OUT]
+    /*F1*/   "BMC_ASSERT_CLR_CMOS_L", // [OUT]
+    /*F2*/   "BMC_ASSERT_BTN_LOCK_L", // [OUT]
+    /*F3*/   "BMC_ASSERT_PME_L",      // [OUT]
+    /*F4*/   "BMC_ASSERT_P0_PROCHOT", // [OUT]
+    /*F5*/   "id-button",       // [OUT]
+    /*F6*/   "",
+    /*F7*/   "",
+
+    /*G0*/   "BMC_SPI_SEL",      // [IN/OUT]
+    /*G1*/   "BMC_SPI_SW_EN_L",  // [IN/OUT]
+    /*G2*/   "BMC_BAT_PRESENT",  // [OUT]
+    /*G3*/   "",
+    /*G4*/   "SKU_ID0",          // [IN/OUT]
+    /*G5*/   "SKU_ID1",          // [IN/OUT]
+    /*G6*/   "SKU_ID2",          // [IN/OUT]
+    /*G7*/   "",
+
+    /*H0*/   "FP_LED_STATUS_GREEN_BMC_L",  // [OUT]
+    /*H1*/   "FP_LED_STATUS_AMBER_BMC_L",  // [OUT]
+    /*H2*/   "BMC_RTC_TEST_EN",            // [OUT]
+    /*H3*/   "",
+    /*H4*/   "BMC_SYS_MON_P0_PROCHOT",     // [IN]
+    /*H5*/   "BMC_SYS_MON_P1_PROCHOT_L",
+    /*H6*/   "BMC_SYS_MON_P0_THERMTRIP_L", // [IN]
+    /*H7*/   "BMC_SYS_MON_P1_THERMTRIP_L",
+
+    //     System SPI Block
+    /*I0*/   "P0_SPI_33_CS1_L", // [IN]
+    /*I1*/   "P0_SPI_33_CLK",   // [IN]
+    /*I2*/   "P0_SPI_33_DO",    // [IN]
+    /*I3*/   "P0_SPI_33_DI",    // [OUT]
+    /*I4*/   "BMC_SPI1CS0_L",   // [OUT]
+    /*I5*/   "BMC_SPI1CK",      // [OUT]
+    /*I6*/   "BMC_SPI1MOSI",    // [OUT]
+    /*I7*/   "BMC_SPI1MISO",    // [IN]
+
+    /*J0*/   "CPU_SMB_VR_ALERT",       // [IN]
+    /*J1*/   "PSMI_IRQ_PMBUS_ALERT_L", // [IN]
+    /*J2*/   "SOC_PSMI_PMBUS_ALERT_L", // [OUT]
+    /*J3*/   "P0_ALERT_R_L",           // [IN]
+    /*J4*/   "",                       // [IN/OUT]
+    /*J5*/   "",                       // [IN/OUT]
+    /*J6*/   "",                       // [IN/OUT]
+    /*J7*/   "",                       // [IN/OUT]
+
+    // in the i2c block
+    /*K0*/   "BMC_SCL5",  // [OUT]
+    /*K1*/   "BMC_SDA5",  // [IN/OUT]
+    /*K2*/   "BMC_SCL6",  // [OUT]
+    /*K3*/   "BMC_SDA6",  // [IN/OUT]
+    /*K4*/   "BMC_SCL7",  // [OUT]
+    /*K5*/   "BMC_SDA7",  // [IN/OUT]
+    /*K6*/   "BMC_SCL8",  // [OUT]
+    /*K7*/   "BMC_SDA8",  // [IN/OUT]
+
+    // in BMC/System UART block
+    /*L0*/   "BMC_CTS1",  // [IN]
+    /*L1*/   "BMC_DCD1",  // [IN]
+    /*L2*/   "BMC_DSR1",  // [IN]
+    /*L3*/   "BMC_NRI1",  // [IN]
+    /*L4*/   "BMC_DTR1",  // [IN]
+    /*L5*/   "BMC_RTS1",  // [IN]
+    /*L6*/   "BMC_TXD1",  // [IN]
+    /*L7*/   "BMC_RXD1",  // [IN]
+
+    /*M0*/   "P1_VDD_CORE_RUN_VRHOT_L",     // [IN/OUT]
+    /*M1*/   "P1_VDD_SOC_RUN_VRHOT_L",      // [IN/OUT]
+    /*M2*/   "P1_VDD_MEM_ABCD_RUN_VRHOT_L", // [IN/OUT]
+    /*M3*/   "P1_VDD_MEM_EFGH_RUN_VRHOT_L", // [IN/OUT]
+    /*M4*/   "BMC_AC_LOSS_L",               // [IN]
+    /*M5*/   "BMC_NMI_SYNC_FLOOD_L",        // [OUT]
+    /*M6*/   "P0_VDD_CORE_RUN_VRHOT_L",     // [IN]
+    /*M7*/   "P0_VDD_SOC_RUN_VRHOT_L",      // [IN]
+
+    /*N0*/   "BMC_PWM_FAN0", // [OUT]
+    /*N1*/   "BMC_PWM_FAN1", // [OUT]
+    /*N2*/   "BMC_PWM_FAN2", // [OUT]
+    /*N3*/   "BMC_PWM_FAN3", // [OUT]
+    /*N4*/   "BMC_PWM_FAN4", // [OUT]
+    /*N5*/   "BMC_PWM_FAN5", // [OUT]
+    /*N6*/   "BMC_PWM_FAN6", // [OUT]
+    /*N7*/   "BMC_SPEAKER",  // [IN]
+
+    /*O0*/   "BMC_TACH_SYS_FAN0", // [IN]
+    /*O1*/   "BMC_TACH_SYS_FAN1", // [IN]
+    /*O2*/   "BMC_TACH_SYS_FAN2", // [IN]
+    /*O3*/   "BMC_TACH_SYS_FAN3", // [IN]
+    /*O4*/   "BMC_TACH_SYS_FAN4", // [IN]
+    /*O5*/   "BMC_TACH_SYS_FAN5", // [IN]
+    /*O6*/   "BMC_TACH_SYS_FAN6", // [IN]
+    /*O7*/   "BMC_TACH_SYS_FAN7", // [IN]
+
+    /*P0*/   "BMC_TACH_SYS_FAN8",  // [IN]
+    /*P1*/   "BMC_TACH_SYS_FAN9",  // [IN]
+    /*P2*/   "BMC_TACH_SYS_FAN10", // [IN]
+    /*P3*/   "BMC_TACH_SYS_FAN11", // [IN]
+    /*P4*/   "BMC_TACH_SYS_FAN12", // [IN]
+    /*P5*/   "BMC_TACH_SYS_FAN13", // [IN]
+    /*P6*/   "BMC_TACH_SYS_FAN14", // [IN]
+    /*P7*/   "BMC_TACH_SYS_FAN15", // [IN]
+
+    /*Q0*/   "BMC_SCL3",             // [OUT]
+    /*Q1*/   "BMC_SDA3",             // [IN/OUT]
+    /*Q2*/   "BMC_SCL4",             // [OUT]
+    /*Q3*/   "BMC_SDA4",             // [IN/OUT]
+    /*Q4*/   "BMC_NVME_SMB_SW_BIT0", // [OUT]
+    /*Q5*/   "BMC_NVME_SMB_SW_BIT1", // [OUT]
+    /*Q6*/   "BMC_PE1_SMB_EN_N",     // [OUT]
+    /*Q7*/   "BMC_PE_WAKE_N",        // [OUT]
+
+    /*R0*/   "BMC_FPGA_JTAG_MUX_S",  // [OUT]
+    /*R1*/   "BMC_FPGA_JTAG_MUX_OE", // [OUT]
+
+    // SPI Block
+    /*R2*/   "post-complete",      // [IN]
+    /*R3*/   "BMC_JTAG_DBREQ_L",   // [OUT]
+    /*R4*/   "BMC_HDT_JTAG_SEL",   // [OUT]
+    /*R5*/   "",                   // Unused
+    /*R6*/   "",                   // Unused
+    /*R7*/   "",                   // Unused
+
+    /*S0*/   "P0_CPU_PRESENT_L",        // [IN]
+    /*S1*/   "",                        // Unused
+    /*S2*/   "",                        // Unused
+    /*S3*/   "BMC_ASSERT_WARM_RST_BTN", // [OUT]
+    /*S4*/   "",                        // [IN] TODO
+    /*S5*/   "",                        // [IN] Reserved
+    /*S6*/   "ENABLE_DEDICATED_VBIOS",  // [IN]
+    /*S7*/   "VGA_CLASS_CODE_SELECT",   // [IN]
+
+    /*T0*/   "", // Unused
+    /*T1*/   "X550_NCSI_TX_EN", // [OUT]
+    /*T2*/   "X550_NCSI_TXD0",  // [OUT]
+    /*T3*/   "X550_NCSI_TXD1",  // [OUT]
+    /*T4*/   "BMC_NCSI_TXD2",   // [OUT]
+    /*T5*/   "BMC_NCSI_TXD3",   // [OUT]
+
+    // these go to an RTL8211E
+    /*T6*/   "BMC_RGMII_TXCLK", // [OUT]
+    /*T7*/   "BMC_RGMII_TXCTL", // [OUT]
+
+    /*U0*/   "BMC_RGMII_TXD0",     // [OUT]
+    /*U1*/   "BMC_RGMII_TXD1",     // [OUT]
+    /*U2*/   "BMC_RGMII_TXD2",     // [OUT]
+    /*U3*/   "BMC_RGMII_TXD3",     // [OUT]
+    /*U4*/   "BMC_NCSI_CLK",       // [IN/OUT]
+    /*U5*/   "",                   // GND
+    /*U6*/   "RMII_BMC_NIC0_RXD0", // [OUT]
+    /*U7*/   "RMII_BMC_NIC0_RXD1", // [OUT]
+
+    /*V0*/   "RMII_BMC_NIC0_CRS_DV", // [OUT]
+    /*V1*/   "RMII_NIC0_ARB_OUT",    // [IN]
+
+    /*V2*/   "BMC_RGMII_RXCLK", // [IN]
+    /*V3*/   "BMC_RGMII_RXCTL", // [IN]
+    /*V4*/   "BMC_RGMII_RXD0",  // [IN]
+    /*V5*/   "BMC_RGMII_RXD1",  // [IN]
+    /*V6*/   "BMC_RGMII_RXD2",  // [IN]
+    /*V7*/   "BMC_RGMII_RXD3",  // [IN]
+
+    /*W0-W7*/   "","","","","","","","", // not present
+
+    /*X0-X7*/   "","","","","","","","", // not present
+
+    /*Y0*/   "",         // reserved
+    /*Y1*/   "",         // reserved
+    /*Y2*/   "",         // reserved
+    /*Y3*/   "",         // reserved
+    /*Y4*/   "BMC_SCL1", // [OUT]
+    /*Y5*/   "BMC_SDA1", // [IN/OUT]
+    /*Y6*/   "BMC_SCL2", // [OUT]
+    /*Y7*/   "BMC_SDA2", // [IN/OUT]
+
+    /*Z0*/   "BIOS_ROM_RST_L",                      // [OUT]
+    /*Z1*/   "BMC_ASSERT_BIOS_WP_L",                // [OUT]
+    /*Z2*/   "BMC_ASSERT_BMC_READY",                // [OUT]
+    /*Z3*/   "",                                    // reserved
+    /*Z4*/   "EN_BMC_2ND_BOOT_WATCHDOG",            // [IN]
+    /*Z5*/   "SELECT_USBCKI_INPUT_FREQUENCY",       // [IN]
+    /*Z6*/   "DISABLE_LPC_DECODE_SUPER_IO_SPECIAL", // [IN]
+    /*Z7*/   "EN_FAST_RESET_ARM_ICE_DEBUGGER",      // [IN]
+
+    /*AA0*/  "BMC_LAN_SMBALRT_N",           // [IN]
+    /*AA1*/  "BMC_GPIO_TDI",                // [OUT]
+    /*AA2*/  "BMC_GPIO_TDO",                // [IN]
+    /*AA3*/  "BMC_GPIO_TCK",                // [OUT]
+    /*AA4*/  "BMC_GPIO_TMS",                // [OUT]
+    /*AA5*/  "PSMI_PMBUS_ALERT_L",          // [IN]
+    /*AA6*/  "P0_VDD_MEM_ABCD_RUN_VRHOT_L", // [IN]
+    /*AA7*/  "P0_VDD_MEM_EFGH_RUN_VRHOT_L", // [IN]
+
+    /*AB0*/  "BMC_SPD_SEL",    // [OUT]
+    /*AB1*/  "P0_BMC_SMB6_EN", // [OUT]
+    /*AB2*/  "BMC_WDT_RST1_P", // [IN/OUT]
+    /*AB3*/  "BMC_WDT_RST2_P", // [OUT]
+    /*AB4*/  "",               // not found
+    /*AB5*/  "",               // not found
+    /*AB6*/  "",               // not found
+    /*AB7*/  "",               // not found
+
+    // LPC / ESPI
+    /*AC0*/  "P0_LAD0",      // [OUT]
+    /*AC1*/  "P0_LAD1",      // [IN/OUT]
+    /*AC2*/  "P0_LAD2",      // [OUT]
+    /*AC3*/  "P0_LAD3",      // [IN/OUT]
+    /*AC4*/  "P0_LPCCLK0",   // [IN]
+    /*AC5*/  "P0_LFRAME_L",  // [IN]
+    /*AC6*/  "P0_SERIRQ",    // [IN/OUT]
+    /*AC7*/  "P0_LPC_RST_L"; // [IN]
+
+    bmc_ready_hog {
+        gpio-hog;
+        gpios = <ASPEED_GPIO(Z, 2) GPIO_ACTIVE_LOW>;
+        output-high;
+        line-name = "BMC_ASSERT_BMC_READY";
+    };
+};
+
+&sdmmc {
+    status = "okay";
+};
+
+&sdhci0 {
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_sd1_default>;
+};
+
+&lpc_snoop {
+    status = "okay";
+    snoop-ports = <0x80>;
 };
