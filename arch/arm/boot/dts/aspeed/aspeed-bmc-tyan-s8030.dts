@@ -493,7 +493,9 @@
             &pinctrl_pwm1_default
             &pinctrl_pwm2_default
             &pinctrl_pwm3_default
-            &pinctrl_pwm4_default>;
+            &pinctrl_pwm4_default
+            &pinctrl_pwm5_default
+            &pinctrl_pwm6_default>;
 
     cpufan@0 {
         reg = <0x00>;
@@ -518,6 +520,16 @@
     fan@3 {
         reg = <0x04>;
         aspeed,fan-tach-ch = /bits/ 8 <0x04>;
+    };
+
+    fan@4 {
+        reg = <0x05>;
+        aspeed,fan-tach-ch = /bits/ 8 <0x05>;
+    };
+
+    fan@5 {
+        reg = <0x06>;
+        aspeed,fan-tach-ch = /bits/ 8 <0x06>;
     };
 };
 
@@ -581,18 +593,18 @@
     /*D1*/   "P0_SLP_S5_L",            // [IN]
     /*D2*/   "BMC_PS_ON",              // [IN]
     /*D3*/   "BMC_SYS_MON_PWROK",      // [IN]
-    /*D4*/   "power-chassis-good",     // [IN]
+    /*D4*/   "BMC_SYS_MON_PWRGOOD",    // [IN]
     /*D5*/   "",                       // [IN]
     /*D6*/   "CHASSIS_INTRUSION",      // [IN] BMC_INTRUDER_HDE_L
     /*D7*/   "BMC_SW_HEARTBEAT_LED_L", // [OUT]
 
-    /*E0*/   "power-button",          // [IN]
-    /*E1*/   "power-chassis-control", // [OUT]
-    /*E2*/   "reset-button",          // [IN]
-    /*E3*/   "reset-control",         // [OUT]
-    /*E4*/   "nmi-button",            // [IN]
-    /*E5*/   "nmi-control",           // [OUT]
-    /*E6*/   "P0_APML_SEL",           // [IN/OUT]
+    /*E0*/   "PWR_BTN",          // [IN]
+    /*E1*/   "PWR_CHASSIS_CTRL", // [OUT]
+    /*E2*/   "RESET_BTN",        // [IN]
+    /*E3*/   "RESET_CTRL",       // [OUT]
+    /*E4*/   "NMI_BTN",          // [IN]
+    /*E5*/   "NMI_CTRL",         // [OUT]
+    /*E6*/   "P0_APML_SEL",      // [IN/OUT]
     /*E7*/   "",
 
     /*F0*/   "BMC_CPU_PIROM_SMB_WP",  // [OUT]
@@ -600,7 +612,7 @@
     /*F2*/   "BMC_ASSERT_BTN_LOCK_L", // [OUT]
     /*F3*/   "BMC_ASSERT_PME_L",      // [OUT]
     /*F4*/   "BMC_ASSERT_P0_PROCHOT", // [OUT]
-    /*F5*/   "id-button",       // [OUT]
+    /*F5*/   "BMC_IDLED_BTN_L",       // [OUT]
     /*F6*/   "",
     /*F7*/   "",
 
@@ -710,7 +722,7 @@
     /*R1*/   "BMC_FPGA_JTAG_MUX_OE", // [OUT]
 
     // SPI Block
-    /*R2*/   "post-complete",      // [IN]
+    /*R2*/   "FM_BIOS_POST_CMPLT", // [IN]
     /*R3*/   "BMC_JTAG_DBREQ_L",   // [OUT]
     /*R4*/   "BMC_HDT_JTAG_SEL",   // [OUT]
     /*R5*/   "",                   // Unused
